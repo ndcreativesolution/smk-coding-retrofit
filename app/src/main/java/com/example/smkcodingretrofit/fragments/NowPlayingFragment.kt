@@ -3,100 +3,66 @@ package com.example.smkcodingretrofit.fragments
 import android.content.Context
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.example.smkcodingretrofit.POJO.NowPlaying
 
 import com.example.smkcodingretrofit.R
+import com.example.smkcodingretrofit.adapter.NowPlayingAdapter
+import com.example.smkcodingretrofit.utils.EndPoints
+import com.example.smkcodingretrofit.utils.InitRetrofit
+import kotlinx.android.synthetic.main.fragment_now_playing.*
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
 
-/**
- * A simple [Fragment] subclass.
- * Activities that contain this fragment must implement the
- * [NowPlayingFragment.OnFragmentInteractionListener] interface
- * to handle interaction events.
- * Use the [NowPlayingFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class NowPlayingFragment : Fragment() {
-    // TODO: Rename and change types of parameters
-    private var param1: String? = null
-    private var param2: String? = null
-    private var listener: OnFragmentInteractionListener? = null
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        arguments?.let {
-            param1 = it.getString(ARG_PARAM1)
-            param2 = it.getString(ARG_PARAM2)
-        }
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
+        savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_now_playing, container, false)
-    }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    fun onButtonPressed(uri: Uri) {
-        listener?.onFragmentInteraction(uri)
-    }
+        var view = inflater.inflate(R.layout.fragment_now_playing, container, false)
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-        if (context is OnFragmentInteractionListener) {
-            listener = context
-        } else {
-            throw RuntimeException(context.toString() + " must implement OnFragmentInteractionListener")
+        var swipe = view.findViewById<View>(R.id.refresh_now_playing) as SwipeRefreshLayout
+        swipe.setOnRefreshListener {
+            swipe.isRefreshing =  false
+            getNowPlayingData()
         }
+
+        getNowPlayingData()
+
+        return view
     }
 
-    override fun onDetach() {
-        super.onDetach()
-        listener = null
-    }
+    private fun getNowPlayingData() {
+        var api = InitRetrofit().getInitInstance()
+        var call = api.requestNowPlaying(EndPoints.API_KEY)
+        call.enqueue(object : Callback<NowPlaying> {
+            override fun onFailure(call: Call<NowPlaying>, t: Throwable) {
+                Log.d("MOVIE STATUS", "Failure" + t.stackTrace)
+            }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     *
-     *
-     * See the Android Training lesson [Communicating with Other Fragments]
-     * (http://developer.android.com/training/basics/fragments/communicating.html)
-     * for more information.
-     */
-    interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        fun onFragmentInteraction(uri: Uri)
-    }
-
-    companion object {
-        /**
-         * Use this factory method to create a new instance of
-         * this fragment using the provided parameters.
-         *
-         * @param param1 Parameter 1.
-         * @param param2 Parameter 2.
-         * @return A new instance of fragment NowPlayingFragment.
-         */
-        // TODO: Rename and change types and number of parameters
-        @JvmStatic
-        fun newInstance(param1: String, param2: String) =
-            NowPlayingFragment().apply {
-                arguments = Bundle().apply {
-                    putString(ARG_PARAM1, param1)
-                    putString(ARG_PARAM2, param2)
+            override fun onResponse(call: Call<NowPlaying>, response: Response<NowPlaying>) {
+                if (response !=  null) {
+                    Log.d("MOVIE STATUS", response.body().toString())
+                    if (response.isSuccessful) {
+                        var data = response.body()!!.data
+                        val adapter = NowPlayingAdapter(activity, data)
+                        rv_now_playing.adapter = adapter
+                        rv_now_playing.layoutManager = GridLayoutManager(activity, 2)
+                    } else {
+                        Log.d("MOVIE STATUS", "GAGAL")
+                    }
                 }
             }
+        })
     }
 }

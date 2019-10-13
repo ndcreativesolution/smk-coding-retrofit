@@ -4,6 +4,9 @@ import com.google.gson.annotations.SerializedName
 
 class NowPlaying {
 
+    @SerializedName("results")
+    var data: List<NowPlayingData>? = null
+
     inner class NowPlayingData {
         @SerializedName("popularity")
         val popularity: Double? = null
@@ -31,6 +34,9 @@ class NowPlaying {
 
         @SerializedName("original_title")
         val original_title: String? = null
+
+        @SerializedName("genre_ids")
+        val genreIds: List<Int>? = null
 
         @SerializedName("title")
         val title: String? = null
